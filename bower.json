@@ -1,0 +1,25 @@
+{
+  "name": "comp392-assignment3-battletruck",
+  "authors": [
+    "Vishal Guleria and Vinay Bhardwaj"
+  ],
+  "description": "COMP392 Assignment 3 - BattleTruck for Advanced Graphics",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "https://github.com/buntu88/COMP392-BattleTruck.git",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "Scripts/lib"
+  ],
+  "dependencies": {
+    "three.js": "threejs#*",
+    "dat-gui": "~0.5.1",
+    "stats.js": "*",
+    "Physijs": "physijs#*"
+  }
+}
