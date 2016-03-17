@@ -354,7 +354,7 @@ var game = (function () {
         cubeInnerWall3.receiveShadow = true;
         cubeInnerWall3.name = "Barrier";
         cubeInnerWall3.position.x = 20;
-        cubeInnerWall3.position.y = 4;
+        cubeInnerWall3.position.y = 0;
         cubeInnerWall3.position.z = 3.75;
         scene.add(cubeInnerWall3);
         cubeGeometryIW4 = new BoxGeometry(18, 8, 1);
@@ -363,7 +363,7 @@ var game = (function () {
         cubeInnerWall4.receiveShadow = true;
         cubeInnerWall4.name = "Barrier";
         cubeInnerWall4.position.x = -20;
-        cubeInnerWall4.position.y = 4;
+        cubeInnerWall4.position.y = 0;
         cubeInnerWall4.position.z = -4.1;
         scene.add(cubeInnerWall4);
         //ADDING MINES
