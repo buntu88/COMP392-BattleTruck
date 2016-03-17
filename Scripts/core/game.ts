@@ -60,6 +60,7 @@ var game = (() => {
     var blocker: HTMLElement;
     var instructions: HTMLElement;
     var spotLight: SpotLight;
+    var ambientLight: AmbientLight;
     var groundGeometry: CubeGeometry;
     var groundPhysicsMaterial: Physijs.Material;
     var groundMaterial: PhongMaterial;
@@ -75,6 +76,39 @@ var game = (() => {
     var groundTextureNormal: Texture;
     var frontTextureNormal: Texture;
     var clock: Clock;
+    var cubeTexture: Texture;
+    var cubeTextureNormal: Texture;
+    var destructiveMaterial: Physijs.Material;
+    var destructiveMaterialPhong: PhongMaterial;
+    var destructiveWallTexture: Texture;
+    var destructiveWallTextureNormal: Texture;
+    var minesTexture: Texture;
+    var minesTextureNormal: Texture;
+    var mineMaterial: Physijs.Material;
+    var mineMaterialPhong: PhongMaterial;
+    var cubeBoundary1: Physijs.Mesh;
+    var cubeBoundary2: Physijs.Mesh;
+    var cubeBoundary3: Physijs.Mesh;
+    var cubeBoundary4: Physijs.Mesh;
+    var cubeInnerWall1: Physijs.Mesh;
+    var cubeInnerWall2: Physijs.Mesh;
+    var cubeInnerWall3: Physijs.Mesh;
+    var cubeInnerWall4: Physijs.Mesh;
+    var cubeMines: Physijs.Mesh;
+
+    var cubeGeometryB1: CubeGeometry;
+    var cubeGeometryB2: CubeGeometry;
+    var cubeGeometryB3: CubeGeometry;
+    var cubeGeometryB4: CubeGeometry;
+    var cubeGeometryIW1: CubeGeometry;
+    var cubeGeometryIW2: CubeGeometry;
+    var cubeGeometryIW3: CubeGeometry;
+    var cubeGeometryIW4: CubeGeometry;
+    var cubeGeometryMines: CubeGeometry;
+
+
+    var cubeMaterialBase: Physijs.Material;
+    var cubeMaterial: PhongMaterial;
     var playerGeometry1: CubeGeometry;
     var playerGeometry: SphereGeometry;
     var playerGeometrya: CubeGeometry;
@@ -110,6 +144,9 @@ var game = (() => {
     var directionLine: Line;
 
     function init() {
+
+
+
         // Create to HTMLElements
         blocker = document.getElementById("blocker");
         instructions = document.getElementById("instructions");
@@ -182,11 +219,7 @@ var game = (() => {
         scene.add(spotLight);
         console.log("Added spotLight to scene");
 
-        // Ground Object
-        groundTexture = new THREE.TextureLoader().load('../../Assets/images/GravelCobble.jpg');
-        groundTexture.wrapS = THREE.RepeatWrapping;
-        groundTexture.wrapT = THREE.RepeatWrapping;
-        groundTexture.repeat.set(8, 8);
+
 
         // Truck Body Object
         bodyTexture = new THREE.TextureLoader().load('../../Assets/images/Body.jpg');
@@ -234,6 +267,14 @@ var game = (() => {
         breakLightTexture.wrapT = THREE.RepeatWrapping;
         breakLightTexture.repeat.set(1, 1);
 
+
+
+        // Ground Object
+        groundTexture = new THREE.TextureLoader().load('../../Assets/images/GravelCobble.jpg');
+        groundTexture.wrapS = THREE.RepeatWrapping;
+        groundTexture.wrapT = THREE.RepeatWrapping;
+        groundTexture.repeat.set(8, 8);
+
         groundTextureNormal = new THREE.TextureLoader().load('../../Assets/images/GravelCobbleNormal.jpg');
         groundTextureNormal.wrapS = THREE.RepeatWrapping;
         groundTextureNormal.wrapT = THREE.RepeatWrapping;
@@ -244,7 +285,7 @@ var game = (() => {
         groundMaterial.bumpMap = groundTextureNormal;
         groundMaterial.bumpScale = 0.2;
 
-        groundGeometry = new BoxGeometry(32, 1, 32);
+        groundGeometry = new BoxGeometry(60, 0, 60);
         groundPhysicsMaterial = Physijs.createMaterial(groundMaterial, 0, 0);
         ground = new Physijs.ConvexMesh(groundGeometry, groundPhysicsMaterial, 0);
         ground.receiveShadow = true;
@@ -253,17 +294,166 @@ var game = (() => {
         console.log("Added Burnt Ground to scene");
 
 
+        cubeTexture = new THREE.TextureLoader().load('../../Assets/images/wall.jpg');
+        cubeTexture.wrapS = THREE.RepeatWrapping;
+        cubeTexture.wrapT = THREE.RepeatWrapping;
+        cubeTexture.repeat.set(6, 6);
+
+        cubeTextureNormal = new THREE.TextureLoader().load('../../Assets/images/wallnormal.png')
+        cubeTextureNormal.wrapS = THREE.RepeatWrapping;
+        cubeTextureNormal.wrapT = THREE.RepeatWrapping;
+        cubeTextureNormal.repeat.set(6, 6);
+
+        cubeMaterial = new PhongMaterial();
+        cubeMaterial.map = cubeTexture;
+        cubeMaterial.bumpMap = cubeTextureNormal;
+        cubeMaterial.bumpScale = 0.2;
+        cubeMaterialBase = Physijs.createMaterial(cubeMaterial, 0, 0);
+
+        //MATERIAL FOR DESTRUCTIVE WALLS
+        destructiveWallTexture = new THREE.TextureLoader().load('../../Assets/images/whitewall.jpg');
+        destructiveWallTexture.wrapS = THREE.RepeatWrapping;
+        destructiveWallTexture.wrapT = THREE.RepeatWrapping;
+        destructiveWallTexture.repeat.set(1, 1);
+
+        destructiveWallTextureNormal = new THREE.TextureLoader().load('../../Assets/images/whitewallnormal.png')
+        destructiveWallTextureNormal.wrapS = THREE.RepeatWrapping;
+        destructiveWallTextureNormal.wrapT = THREE.RepeatWrapping;
+        destructiveWallTextureNormal.repeat.set(1, 1);
+
+        destructiveMaterialPhong = new PhongMaterial();
+        destructiveMaterialPhong.map = destructiveWallTexture;
+        destructiveMaterialPhong.bumpMap = destructiveWallTextureNormal;
+        destructiveMaterialPhong.bumpScale = 0.2;
+        destructiveMaterial = Physijs.createMaterial(destructiveMaterialPhong, 0, 0);
+        
+        
+        //MATERIAL FOR MINES
+        minesTexture = new THREE.TextureLoader().load('../../Assets/images/mine.jpg');
+        minesTexture.wrapS = THREE.RepeatWrapping;
+        minesTexture.wrapT = THREE.RepeatWrapping;
+        minesTexture.repeat.set(1, 1);
+
+        minesTextureNormal = new THREE.TextureLoader().load('../../Assets/images/minenormal.png')
+        minesTextureNormal.wrapS = THREE.RepeatWrapping;
+        minesTextureNormal.wrapT = THREE.RepeatWrapping;
+        minesTextureNormal.repeat.set(1, 1);
+
+        mineMaterialPhong = new PhongMaterial();
+        mineMaterialPhong.map = minesTexture;
+        mineMaterialPhong.bumpMap = minesTextureNormal;
+        mineMaterialPhong.bumpScale = 0.2;
+        mineMaterial = Physijs.createMaterial(mineMaterialPhong, 0, 0);
+
+
+
+        //ADDING BOUNDARY WALLS
+        cubeGeometryB1 = new BoxGeometry(60, 8, 1);
+        cubeBoundary1 = new Physijs.ConvexMesh(cubeGeometryB1, cubeMaterialBase, 0);
+        cubeBoundary1.receiveShadow = true;
+        cubeBoundary1.position.set(0, 4, -29.5);
+        cubeBoundary1.name = "Boundary";
+        scene.add(cubeBoundary1);
+        console.log("Added Burnt Ground to scene");
+
+        cubeGeometryB2 = new BoxGeometry(60, 8, 1);
+        cubeBoundary2 = new Physijs.ConvexMesh(cubeGeometryB2, cubeMaterialBase, 0);
+        cubeBoundary2.castShadow = true;
+        cubeBoundary2.receiveShadow = true;
+        cubeBoundary2.name = "Boundary";
+        cubeBoundary2.position.x = 0;
+        cubeBoundary2.position.y = 4;
+        cubeBoundary1.name = "Boundary";
+        cubeBoundary2.position.z = 29.5;
+        scene.add(cubeBoundary2);
+
+        cubeGeometryB3 = new BoxGeometry(58, 8, 1);
+        cubeBoundary3 = new Physijs.ConvexMesh(cubeGeometryB3, cubeMaterialBase, 0);
+        cubeBoundary3.castShadow = true;
+        cubeBoundary3.receiveShadow = true;
+        cubeBoundary3.name = "Boundary";
+        cubeBoundary3.rotation.y = 1.570796;
+        cubeBoundary3.position.x = 29.5;
+        cubeBoundary3.position.y = 4;
+        cubeBoundary3.position.z = 0;
+        scene.add(cubeBoundary3);
+
+        cubeGeometryB4 = new BoxGeometry(58, 8, 1);
+        cubeBoundary4 = new Physijs.ConvexMesh(cubeGeometryB4, cubeMaterialBase, 0);
+        cubeBoundary4.castShadow = true;
+        cubeBoundary4.receiveShadow = true;
+        cubeBoundary4.name = "Boundary";
+        cubeBoundary4.rotation.y = 1.570796;
+        cubeBoundary4.position.x = -29.5;
+        cubeBoundary4.position.y = 4;
+        cubeBoundary4.position.z = 0;
+        scene.add(cubeBoundary4);
+
+        //ADDING INNER WALLS
+        cubeGeometryIW1 = new BoxGeometry(44.5, 8, 1);
+        cubeInnerWall1 = new Physijs.ConvexMesh(cubeGeometryIW1, cubeMaterialBase, 0);
+        cubeInnerWall1.castShadow = true;
+        cubeInnerWall1.receiveShadow = true;
+        cubeInnerWall1.name = "Boundary";
+        cubeInnerWall1.rotation.y = 1.570796;
+        cubeInnerWall1.position.x = 10.5;
+        cubeInnerWall1.position.y = 4;
+        cubeInnerWall1.position.z = -7.4;
+        scene.add(cubeInnerWall1);
+
+        cubeGeometryIW2 = new BoxGeometry(44.5, 8, 1);
+        cubeInnerWall2 = new Physijs.ConvexMesh(cubeGeometryIW2, cubeMaterialBase, 0);
+        cubeInnerWall2.castShadow = true;
+        cubeInnerWall2.receiveShadow = true;
+        cubeInnerWall2.name = "Boundary";
+        cubeInnerWall2.rotation.y = 1.570796;
+        cubeInnerWall2.position.x = -10.5;
+        cubeInnerWall2.position.y = 4;
+        cubeInnerWall2.position.z = 7.4;
+        scene.add(cubeInnerWall2);
+
+        cubeGeometryIW3 = new BoxGeometry(18, 8, 1);
+        cubeInnerWall3 = new Physijs.ConvexMesh(cubeGeometryIW3, destructiveMaterial, 0);
+        cubeInnerWall3.castShadow = true;
+        cubeInnerWall3.receiveShadow = true;
+        cubeInnerWall3.name = "Barrier";
+        cubeInnerWall3.position.x = 20;
+        cubeInnerWall3.position.y = 4;
+        cubeInnerWall3.position.z = 3.75;
+        scene.add(cubeInnerWall3);
+
+        cubeGeometryIW4 = new BoxGeometry(18, 8, 1);
+        cubeInnerWall4 = new Physijs.ConvexMesh(cubeGeometryIW4, destructiveMaterial, 0);
+        cubeInnerWall4.castShadow = true;
+        cubeInnerWall4.receiveShadow = true;
+        cubeInnerWall4.name = "Barrier";
+        cubeInnerWall4.position.x = -20;
+        cubeInnerWall4.position.y = 4;
+        cubeInnerWall4.position.z = -4.1;
+        scene.add(cubeInnerWall4);
+
+        //ADDING MINES
+        cubeGeometryMines = new BoxGeometry(20, 0.5, 4.84);
+        cubeMines = new Physijs.ConvexMesh(cubeGeometryMines, mineMaterial, 0);
+        cubeMines.castShadow = true;
+        cubeMines.receiveShadow = true;
+        cubeMines.name = "Mine";
+        cubeMines.position.x = 0;
+        cubeMines.position.y = 0.27;
+        cubeMines.position.z = 0.48;
+        scene.add(cubeMines);
+
         // Universal Tire Object
         playerGeometry = new SphereGeometry(2, 32, 32);
         playerMaterial = Physijs.createMaterial(new PhongMaterial({ color: 0x000000 }), 0.4, 0);
 
         player = new Physijs.SphereMesh(playerGeometry, playerMaterial, 1);
-        player.position.set(0, 30, 10);
+        player.position.set(-19, 20, 15);
         player.receiveShadow = true;
         player.castShadow = true;
         player.name = "Player";
 
-        scene.add(player);
+
         console.log("Added Player to Scene");
 
 
@@ -271,7 +461,7 @@ var game = (() => {
 
         // Truck Body Object
         playerGeometry1 = new BoxGeometry(5, 5, 5);
-        playerMaterial1 = Physijs.createMaterial(frontMaterial, 0, 0);
+        playerMaterial1 = Physijs.createMaterial(frontMaterial, 0.4, 0);
 
         player1 = new Physijs.BoxMesh(playerGeometry1, playerMaterial1, 1);
         player1.position.set(0, 2.5, 1.5);
@@ -285,7 +475,7 @@ var game = (() => {
         playerGeometrya = new BoxGeometry(5, 3, 3);
         playerMateriala = Physijs.createMaterial(new PhongMaterial({ map: frontTexture }), 0.4, 0);
 
-        playera = new Physijs.ConvexMesh(playerGeometrya, playerMateriala, 0);
+        playera = new Physijs.ConvexMesh(playerGeometrya, playerMateriala, 1);
         playera.position.set(0, -1, -4);
         playera.receiveShadow = true;
         playera.castShadow = true;
@@ -345,6 +535,9 @@ var game = (() => {
         playerf.name = "Player2";
         player1.add(playerf);
         console.log("Added Player1 to Scene");
+        scene.add(player);
+        //======================================================================================================
+
 
 
         // Collision Check
@@ -361,14 +554,21 @@ var game = (() => {
             }
         });
 
-        // Add DirectionLine
-        directionLineMaterial = new LineBasicMaterial({ color: 0xffff00 });
-        directionLineGeometry = new Geometry();
-        directionLineGeometry.vertices.push(new Vector3(0, 0, 0)); // line origin
-        directionLineGeometry.vertices.push(new Vector3(0, 0, -50)); // end of the line
-        directionLine = new Line(directionLineGeometry, directionLineMaterial);
-        player.add(directionLine);
-        console.log("Added DirectionLine to the Player");
+        // Add an AmbientLight to the scene
+        ambientLight = new AmbientLight(0xaaaaaa);
+        scene.add(ambientLight);
+        console.log("Added an Ambient Light to Scene");
+        
+        // Add a SpotLight to the scene
+        spotLight = new SpotLight(0xffffff);
+        spotLight.position.set(21, 50, 19);
+        //spotLight.rotation.set(37.261, 106.936, 3.164);
+        spotLight.lookAt(new Vector3(0, 0, 0));
+        spotLight.intensity = 2;
+        spotLight.castShadow = true;
+        // spotLight.
+        scene.add(spotLight);
+        console.log("Added a SpotLight Light to Scene");
 
         // create parent-child relationship with camera and player
         playerb.add(camera);
@@ -535,9 +735,10 @@ var game = (() => {
 
     // Setup main camera for the scene
     function setupCamera(): void {
-        camera = new PerspectiveCamera(35, config.Screen.RATIO, 0.1, 100);
-        //  camera.position.set(0, 10, 30);
-        //  camera.lookAt(new Vector3(0, 0,0));
+        camera = new PerspectiveCamera(35, config.Screen.RATIO, 0.1, 150);
+        // camera.position.set(0, 50, 80);
+        // camera.lookAt(new Vector3(0, 0, 0));
+
         console.log("Finished setting up Camera...");
     }
 
