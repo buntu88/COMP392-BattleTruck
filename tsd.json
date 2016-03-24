@@ -6,7 +6,7 @@
   "bundle": "typings/tsd.d.ts",
   "installed": {
     "threejs/three.d.ts": {
-      "commit": "9f0f926a12026287b5a4a229e5672c01e7549313"
+      "commit": "6766ed1d0faf02ede9e2edf2e66bbb2388c825ec"
     },
     "dat-gui/dat-gui.d.ts": {
       "commit": "3191f6e0088eee07c4d8fd24e4d27a40a60d9eb9"

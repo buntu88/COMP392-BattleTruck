@@ -1,9 +1,5 @@
 /// <reference path="_reference.ts"/>
 // MAIN GAME FILE
-//Author’s name:        Vishal Guleria (300813391) & Vinay Bhardwaj (300825097)
-//Date last Modified    March 18,2016
-//Program description   Assignment 3 - Battle Truck : Saving abandoned soldiers.
-//Revision History      v2
 // THREEJS Aliases
 var Scene = Physijs.Scene;
 var Renderer = THREE.WebGLRenderer;
@@ -26,16 +22,11 @@ var Object3D = THREE.Object3D;
 var SpotLight = THREE.SpotLight;
 var PointLight = THREE.PointLight;
 var AmbientLight = THREE.AmbientLight;
-var Control = objects.Control;
-var GUI = dat.GUI;
 var Color = THREE.Color;
 var Vector3 = THREE.Vector3;
 var Face3 = THREE.Face3;
-var Point = objects.Point;
 var CScreen = config.Screen;
 var Clock = THREE.Clock;
-//Custom Game Objects
-var gameObject = objects.gameObject;
 // Setup a Web Worker for Physijs
 Physijs.scripts.worker = "/Scripts/lib/Physijs/physijs_worker.js";
 Physijs.scripts.ammo = "/Scripts/lib/Physijs/examples/js/ammo.js";
@@ -47,8 +38,6 @@ var game = (function () {
     var scene = new Scene(); // Instantiate Scene Object
     var renderer;
     var camera;
-    var control;
-    var gui;
     var stats;
     var blocker;
     var instructions;
@@ -132,10 +121,91 @@ var game = (function () {
     var directionLineMaterial;
     var directionLineGeometry;
     var directionLine;
+    var group = new THREE.Object3D();
+    var group1 = new THREE.Object3D();
+    var group2 = new THREE.Object3D();
+    var cube;
+    var cube1;
+    var cube2;
+    var cube3;
+    var cube4;
+    var cube5;
+    var cube6;
+    var cube7;
+    var cube8;
+    var cubeGeometry;
+    var cubeGeometry1;
+    var cubeGeometry2;
+    var cubeGeometry3;
+    var cubeGeometry4;
+    var cubeGeometry5;
+    var cubeGeometry6;
+    var cubeGeometry7;
+    var cubeGeometry8;
+    var cubeMaterialSkin;
+    var cubeMaterialBody;
+    var cubeMaterialLegs;
+    var cubeMaterialFeet;
+    var coinGeometry;
+    var coinMaterial;
+    var coins;
+    var cointCount = 10;
+    var deathPlaneGeometry;
+    var deathPlaneMaterial;
+    var deathPlane;
+    // CreateJS Related Variables
+    var assets;
+    var canvas;
+    var stage;
+    var scoreLabel;
+    var livesLabel;
+    var scoreValue;
+    var livesValue;
+    var manifest = [
+        { id: "land", src: "../../Assets/audio/Land.wav" },
+        { id: "deathPlane", src: "../../Assets/audio/hit.wav" },
+        { id: "coin", src: "../../Assets/audio/coin.mp3" },
+        { id: "barrier", src: "../../Assets/audio/coin.mp3" },
+        { id: "boundary", src: "../../Assets/audio/Jump.wav" }
+    ];
+    function preload() {
+        assets = new createjs.LoadQueue();
+        assets.installPlugin(createjs.Sound);
+        assets.on("complete", init, this);
+        assets.loadManifest(manifest);
+    }
+    function setupCanvas() {
+        canvas = document.getElementById("canvas");
+        canvas.setAttribute("width", config.Screen.WIDTH.toString());
+        canvas.setAttribute("height", (config.Screen.HEIGHT * 0.1).toString());
+        canvas.style.backgroundColor = "#000000";
+        stage = new createjs.Stage(canvas);
+    }
+    function setupScoreboard() {
+        // initialize  score and lives values
+        scoreValue = 0;
+        livesValue = 5;
+        // Add Lives Label
+        livesLabel = new createjs.Text("LIVES: " + livesValue, "40px Consolas", "#ffffff");
+        livesLabel.x = config.Screen.WIDTH * 0.1;
+        livesLabel.y = (config.Screen.HEIGHT * 0.15) * 0.20;
+        stage.addChild(livesLabel);
+        console.log("Added Lives Label to stage");
+        // Add Score Label
+        scoreLabel = new createjs.Text("SCORE: " + scoreValue, "40px Consolas", "#ffffff");
+        scoreLabel.x = config.Screen.WIDTH * 0.8;
+        scoreLabel.y = (config.Screen.HEIGHT * 0.15) * 0.20;
+        stage.addChild(scoreLabel);
+        console.log("Added Score Label to stage");
+    }
     function init() {
         // Create to HTMLElements
         blocker = document.getElementById("blocker");
         instructions = document.getElementById("instructions");
+        // Set Up CreateJS Canvas and Stage
+        setupCanvas();
+        // Set Up Scoreboard
+        setupScoreboard();
         //check to see if pointerlock is supported
         havePointerLock = 'pointerLockElement' in document ||
             'mozPointerLockElement' in document ||
@@ -371,7 +441,7 @@ var game = (function () {
         cubeMines = new Physijs.ConvexMesh(cubeGeometryMines, mineMaterial, 0);
         cubeMines.castShadow = true;
         cubeMines.receiveShadow = true;
-        cubeMines.name = "Mine";
+        cubeMines.name = "DeathPlane";
         cubeMines.position.x = 0;
         cubeMines.position.y = 0.27;
         cubeMines.position.z = 0.48;
@@ -380,7 +450,7 @@ var game = (function () {
         playerGeometry = new SphereGeometry(2, 32, 32);
         playerMaterial = Physijs.createMaterial(new PhongMaterial({ color: 0x000000 }), 0.4, 0);
         player = new Physijs.SphereMesh(playerGeometry, playerMaterial, 1);
-        player.position.set(-19, 20, 15);
+        player.position.set(-19, 10, 15);
         player.receiveShadow = true;
         player.castShadow = true;
         player.name = "Player";
@@ -452,17 +522,296 @@ var game = (function () {
         console.log("Added Player1 to Scene");
         scene.add(player);
         //======================================================================================================
+        // Add custom coin imported from Blender
+        addCoinMesh();
+        addDeathPlane();
         // Collision Check
-        player.addEventListener('collision', function (event) {
-            console.log(event);
-            if (event.name === "Ground") {
-                console.log("player hit the ground");
+        player.addEventListener('collision', function (eventObject) {
+            if (eventObject.name === "Ground") {
                 isGrounded = true;
+                createjs.Sound.play("land");
             }
-            if (event.name === "Sphere") {
-                console.log("player hit the sphere");
+            if (eventObject.name === "Coin") {
+                createjs.Sound.play("coin");
+                scene.remove(eventObject);
+                setCoinPosition(eventObject);
+                scoreValue += 100;
+                scoreLabel.text = "SCORE: " + scoreValue;
+            }
+            if (eventObject.name === "DeathPlane") {
+                createjs.Sound.play("deathPlane");
+                livesValue--;
+                livesLabel.text = "LIVES: " + livesValue;
+                scene.remove(player);
+                player.position.set(-19, 10, 15);
+                scene.add(player);
+            }
+            if (eventObject.name === "Boundary") {
+                createjs.Sound.play("boundary");
+                scoreValue -= 20;
+                scoreLabel.text = "SCORE: " + scoreValue;
+            }
+            if (eventObject.name === "Barrier") {
+                createjs.Sound.play("barrier");
+                scene.remove(eventObject);
+                scoreValue += 500;
+                scoreLabel.text = "SCORE: " + scoreValue;
             }
         });
+        cubeMaterialSkin = new LambertMaterial({ color: 0x90EE90 });
+        cubeMaterialBody = new LambertMaterial({ color: 0x9ACD32 });
+        cubeMaterialLegs = new LambertMaterial({ color: 0x000000 });
+        cubeMaterialFeet = new LambertMaterial({ color: 0x614126 });
+        //Adding Head
+        cubeGeometry = new CubeGeometry(2.036, 2.315, 2);
+        cube = new Mesh(cubeGeometry, cubeMaterialSkin);
+        cube.castShadow = true;
+        cube.receiveShadow = true;
+        cube.position.x = 0.125;
+        cube.position.y = 4.73;
+        cube.position.z = 0.04;
+        group.add(cube); //Adding Cube to the group
+        //Adding Neck
+        cubeGeometry1 = new CubeGeometry(1, 1, 1);
+        cube1 = new Mesh(cubeGeometry1, cubeMaterialSkin);
+        cube1.castShadow = true;
+        cube1.receiveShadow = true;
+        cube1.position.x = -0.02;
+        cube1.position.y = 3.3;
+        cube1.position.z = 0.045;
+        group.add(cube1); //Adding Cube to the group
+        //Adding Body
+        cubeGeometry2 = new CubeGeometry(1.7, 5, 4);
+        cube2 = new Mesh(cubeGeometry2, cubeMaterialBody);
+        cube2.castShadow = true;
+        cube2.receiveShadow = true;
+        cube2.position.x = 0.06;
+        cube2.position.y = 0.5;
+        cube2.position.z = 0.01;
+        group.add(cube2); //Adding Cube to the group
+        //Adding right arm
+        cubeGeometry3 = new CubeGeometry(1.2, 0.8, 3.5);
+        cube3 = new Mesh(cubeGeometry3, cubeMaterialSkin);
+        cube3.castShadow = true;
+        cube3.receiveShadow = true;
+        cube3.position.x = -0.21;
+        cube3.position.y = 2.6;
+        cube3.position.z = -3.71;
+        group.add(cube3); //Adding Cube to the group
+        //Adding left arm
+        cubeGeometry4 = new CubeGeometry(1.2, 0.8, 3.5);
+        cube4 = new Mesh(cubeGeometry4, cubeMaterialSkin);
+        cube4.castShadow = true;
+        cube4.receiveShadow = true;
+        cube4.position.x = -0.21;
+        cube4.position.y = 2.6;
+        cube4.position.z = 3.71;
+        group.add(cube4); //Adding Cube to the group
+        //Adding right leg
+        cubeGeometry5 = new CubeGeometry(1, 3, 1);
+        cube5 = new Mesh(cubeGeometry5, cubeMaterialLegs);
+        cube5.castShadow = true;
+        cube5.receiveShadow = true;
+        cube5.position.x = -0.16;
+        cube5.position.y = -3.5;
+        cube5.position.z = -1.0;
+        group.add(cube5); //Adding Cube to the group
+        //Adding left leg
+        cubeGeometry6 = new CubeGeometry(1, 3, 1);
+        cube6 = new Mesh(cubeGeometry6, cubeMaterialLegs);
+        cube6.castShadow = true;
+        cube6.receiveShadow = true;
+        cube6.position.x = -0.16;
+        cube6.position.y = -3.5;
+        cube6.position.z = 1.0;
+        group.add(cube6); //Adding Cube to the group
+        //Adding right feet
+        cubeGeometry7 = new CubeGeometry(1.6, 0.5, 1);
+        cube7 = new Mesh(cubeGeometry7, cubeMaterialFeet);
+        cube7.castShadow = true;
+        cube7.receiveShadow = true;
+        cube7.position.x = 0.15;
+        cube7.position.y = -4.95;
+        cube7.position.z = -1.0;
+        group.add(cube7); //Adding Cube to the group
+        //Adding left feet
+        cubeGeometry8 = new CubeGeometry(1.6, 0.5, 1);
+        cube8 = new Mesh(cubeGeometry8, cubeMaterialFeet);
+        cube8.castShadow = true;
+        cube8.receiveShadow = true;
+        cube8.position.x = 0.15;
+        cube8.position.y = -4.95;
+        cube8.position.z = 1.0;
+        group.add(cube8); //Adding Cube to the group
+        group.position.set(20, 5, -20);
+        group.rotation.y = -1.567;
+        scene.add(group);
+        cubeGeometry = new CubeGeometry(2.036, 2.315, 2);
+        cube = new Mesh(cubeGeometry, cubeMaterialSkin);
+        cube.castShadow = true;
+        cube.receiveShadow = true;
+        cube.position.x = 0.125;
+        cube.position.y = 4.73;
+        cube.position.z = 0.04;
+        group1.add(cube); //Adding Cube to the group
+        //Adding Neck
+        cubeGeometry1 = new CubeGeometry(1, 1, 1);
+        cube1 = new Mesh(cubeGeometry1, cubeMaterialSkin);
+        cube1.castShadow = true;
+        cube1.receiveShadow = true;
+        cube1.position.x = -0.02;
+        cube1.position.y = 3.3;
+        cube1.position.z = 0.045;
+        group1.add(cube1); //Adding Cube to the group
+        //Adding Body
+        cubeGeometry2 = new CubeGeometry(1.7, 5, 4);
+        cube2 = new Mesh(cubeGeometry2, cubeMaterialBody);
+        cube2.castShadow = true;
+        cube2.receiveShadow = true;
+        cube2.position.x = 0.06;
+        cube2.position.y = 0.5;
+        cube2.position.z = 0.01;
+        group1.add(cube2); //Adding Cube to the group
+        //Adding right arm
+        cubeGeometry3 = new CubeGeometry(1.2, 0.8, 3.5);
+        cube3 = new Mesh(cubeGeometry3, cubeMaterialSkin);
+        cube3.castShadow = true;
+        cube3.receiveShadow = true;
+        cube3.position.x = -0.21;
+        cube3.position.y = 2.6;
+        cube3.position.z = -3.71;
+        group1.add(cube3); //Adding Cube to the group
+        //Adding left arm
+        cubeGeometry4 = new CubeGeometry(1.2, 0.8, 3.5);
+        cube4 = new Mesh(cubeGeometry4, cubeMaterialSkin);
+        cube4.castShadow = true;
+        cube4.receiveShadow = true;
+        cube4.position.x = -0.21;
+        cube4.position.y = 2.6;
+        cube4.position.z = 3.71;
+        group1.add(cube4); //Adding Cube to the group
+        //Adding right leg
+        cubeGeometry5 = new CubeGeometry(1, 3, 1);
+        cube5 = new Mesh(cubeGeometry5, cubeMaterialLegs);
+        cube5.castShadow = true;
+        cube5.receiveShadow = true;
+        cube5.position.x = -0.16;
+        cube5.position.y = -3.5;
+        cube5.position.z = -1.0;
+        group1.add(cube5); //Adding Cube to the group
+        //Adding left leg
+        cubeGeometry6 = new CubeGeometry(1, 3, 1);
+        cube6 = new Mesh(cubeGeometry6, cubeMaterialLegs);
+        cube6.castShadow = true;
+        cube6.receiveShadow = true;
+        cube6.position.x = -0.16;
+        cube6.position.y = -3.5;
+        cube6.position.z = 1.0;
+        group1.add(cube6); //Adding Cube to the group
+        //Adding right feet
+        cubeGeometry7 = new CubeGeometry(1.6, 0.5, 1);
+        cube7 = new Mesh(cubeGeometry7, cubeMaterialFeet);
+        cube7.castShadow = true;
+        cube7.receiveShadow = true;
+        cube7.position.x = 0.15;
+        cube7.position.y = -4.95;
+        cube7.position.z = -1.0;
+        group1.add(cube7); //Adding Cube to the group
+        //Adding left feet
+        cubeGeometry8 = new CubeGeometry(1.6, 0.5, 1);
+        cube8 = new Mesh(cubeGeometry8, cubeMaterialFeet);
+        cube8.castShadow = true;
+        cube8.receiveShadow = true;
+        cube8.position.x = 0.15;
+        cube8.position.y = -4.95;
+        cube8.position.z = 1.0;
+        group1.add(cube8); //Adding Cube to the group
+        group1.position.set(15, 5, -10);
+        scene.add(group1);
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        cubeGeometry = new CubeGeometry(2.036, 2.315, 2);
+        cube = new Mesh(cubeGeometry, cubeMaterialSkin);
+        cube.castShadow = true;
+        cube.receiveShadow = true;
+        cube.position.x = 0.125;
+        cube.position.y = 4.73;
+        cube.position.z = 0.04;
+        group2.add(cube); //Adding Cube to the group
+        //Adding Neck
+        cubeGeometry1 = new CubeGeometry(1, 1, 1);
+        cube1 = new Mesh(cubeGeometry1, cubeMaterialSkin);
+        cube1.castShadow = true;
+        cube1.receiveShadow = true;
+        cube1.position.x = -0.02;
+        cube1.position.y = 3.3;
+        cube1.position.z = 0.045;
+        group2.add(cube1); //Adding Cube to the group
+        //Adding Body
+        cubeGeometry2 = new CubeGeometry(1.7, 5, 4);
+        cube2 = new Mesh(cubeGeometry2, cubeMaterialBody);
+        cube2.castShadow = true;
+        cube2.receiveShadow = true;
+        cube2.position.x = 0.06;
+        cube2.position.y = 0.5;
+        cube2.position.z = 0.01;
+        group2.add(cube2); //Adding Cube to the group
+        //Adding right arm
+        cubeGeometry3 = new CubeGeometry(1.2, 0.8, 3.5);
+        cube3 = new Mesh(cubeGeometry3, cubeMaterialSkin);
+        cube3.castShadow = true;
+        cube3.receiveShadow = true;
+        cube3.position.x = -0.21;
+        cube3.position.y = 2.6;
+        cube3.position.z = -3.71;
+        group2.add(cube3); //Adding Cube to the group
+        //Adding left arm
+        cubeGeometry4 = new CubeGeometry(1.2, 0.8, 3.5);
+        cube4 = new Mesh(cubeGeometry4, cubeMaterialSkin);
+        cube4.castShadow = true;
+        cube4.receiveShadow = true;
+        cube4.position.x = -0.21;
+        cube4.position.y = 2.6;
+        cube4.position.z = 3.71;
+        group2.add(cube4); //Adding Cube to the group
+        //Adding right leg
+        cubeGeometry5 = new CubeGeometry(1, 3, 1);
+        cube5 = new Mesh(cubeGeometry5, cubeMaterialLegs);
+        cube5.castShadow = true;
+        cube5.receiveShadow = true;
+        cube5.position.x = -0.16;
+        cube5.position.y = -3.5;
+        cube5.position.z = -1.0;
+        group2.add(cube5); //Adding Cube to the group
+        //Adding left leg
+        cubeGeometry6 = new CubeGeometry(1, 3, 1);
+        cube6 = new Mesh(cubeGeometry6, cubeMaterialLegs);
+        cube6.castShadow = true;
+        cube6.receiveShadow = true;
+        cube6.position.x = -0.16;
+        cube6.position.y = -3.5;
+        cube6.position.z = 1.0;
+        group2.add(cube6); //Adding Cube to the group
+        //Adding right feet
+        cubeGeometry7 = new CubeGeometry(1.6, 0.5, 1);
+        cube7 = new Mesh(cubeGeometry7, cubeMaterialFeet);
+        cube7.castShadow = true;
+        cube7.receiveShadow = true;
+        cube7.position.x = 0.15;
+        cube7.position.y = -4.95;
+        cube7.position.z = -1.0;
+        group2.add(cube7); //Adding Cube to the group
+        //Adding left feet
+        cubeGeometry8 = new CubeGeometry(1.6, 0.5, 1);
+        cube8 = new Mesh(cubeGeometry8, cubeMaterialFeet);
+        cube8.castShadow = true;
+        cube8.receiveShadow = true;
+        cube8.position.x = 0.15;
+        cube8.position.y = -4.95;
+        cube8.position.z = 1.0;
+        group2.add(cube8); //Adding Cube to the group
+        group2.position.set(25, 5, -10);
+        group2.rotation.y = 3.14159;
+        scene.add(group2);
         // Add an AmbientLight to the scene
         ambientLight = new AmbientLight(0xaaaaaa);
         scene.add(ambientLight);
@@ -472,18 +821,14 @@ var game = (function () {
         spotLight.position.set(21, 50, 19);
         //spotLight.rotation.set(37.261, 106.936, 3.164);
         spotLight.lookAt(new Vector3(0, 0, 0));
-        spotLight.intensity = 2;
+        spotLight.intensity = 1;
         spotLight.castShadow = true;
         // spotLight.
         scene.add(spotLight);
         console.log("Added a SpotLight Light to Scene");
         // create parent-child relationship with camera and player
         playerb.add(camera);
-        camera.position.set(0, 1.5, -2.5);
-        // add controls
-        gui = new GUI();
-        control = new Control();
-        addControl(control);
+        camera.position.set(0, 5, 12);
         // Add framerate stats
         addStatsObject();
         console.log("Added Stats to scene...");
@@ -491,6 +836,48 @@ var game = (function () {
         gameLoop(); // render the scene	
         scene.simulate();
         window.addEventListener('resize', onWindowResize, false);
+    }
+    function setCenter(geometry) {
+        geometry.computeBoundingBox();
+        var bb = geometry.boundingBox;
+        var offset = new THREE.Vector3();
+        offset.addVectors(bb.min, bb.max);
+        offset.multiplyScalar(-0.5);
+        geometry.applyMatrix(new THREE.Matrix4().makeTranslation(offset.x, offset.y, offset.z));
+        geometry.computeBoundingBox();
+        return offset;
+    }
+    function addDeathPlane() {
+        deathPlaneGeometry = new BoxGeometry(100, 1, 100);
+        deathPlaneMaterial = Physijs.createMaterial(new MeshBasicMaterial({ color: 0xff0000 }), 0.4, 0.6);
+        deathPlane = new Physijs.BoxMesh(deathPlaneGeometry, deathPlaneMaterial, 0);
+        deathPlane.position.set(0, -10, 0);
+        deathPlane.name = "DeathPlane";
+        scene.add(deathPlane);
+    }
+    // Add the Coin to the scene
+    function addCoinMesh() {
+        coins = new Array(); // Instantiate a convex mesh array
+        var coinLoader = new THREE.JSONLoader().load("../../Assets/imported/coin.json", function (geometry) {
+            var phongMaterial = new PhongMaterial({ color: 0xE7AB32 });
+            phongMaterial.emissive = new THREE.Color(0xE7AB32);
+            var coinMaterial = Physijs.createMaterial((phongMaterial), 0.4, 0.6);
+            for (var count = 0; count < cointCount; count++) {
+                coins[count] = new Physijs.ConvexMesh(geometry, coinMaterial);
+                coins[count].receiveShadow = true;
+                coins[count].castShadow = true;
+                coins[count].name = "Coin";
+                setCoinPosition(coins[count]);
+            }
+        });
+        console.log("Added Coin Mesh to Scene");
+    }
+    // Set Coin Position
+    function setCoinPosition(coin) {
+        var randomPointX = Math.floor(Math.random() * 20) - 10;
+        var randomPointZ = Math.floor(Math.random() * 20) - 10;
+        coin.position.set(randomPointX, 10, randomPointZ);
+        scene.add(coin);
     }
     //PointerLockChange Event Handler
     function pointerLockChange(event) {
@@ -521,9 +908,12 @@ var game = (function () {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    function addControl(controlObject) {
-        /* ENTER CODE for the GUI CONTROL HERE */
+        canvas.style.width = "100%";
+        livesLabel.x = config.Screen.WIDTH * 0.1;
+        livesLabel.y = (config.Screen.HEIGHT * 0.15) * 0.20;
+        scoreLabel.x = config.Screen.WIDTH * 0.8;
+        scoreLabel.y = (config.Screen.HEIGHT * 0.15) * 0.20;
+        stage.update();
     }
     // Add Frame Rate Stats to the Scene
     function addStatsObject() {
@@ -537,7 +927,12 @@ var game = (function () {
     // Setup main game loop
     function gameLoop() {
         stats.update();
+        coins.forEach(function (coin) {
+            coin.setAngularFactor(new Vector3(0, 0, 0));
+            coin.setAngularVelocity(new Vector3(0, 1, 0));
+        });
         checkControls();
+        stage.update();
         // render using requestAnimationFrame
         requestAnimationFrame(gameLoop);
         // render the scene
@@ -551,13 +946,13 @@ var game = (function () {
             var delta = (time - prevTime) / 1000;
             var direction = new Vector3(0, 0, 0);
             if (keyboardControls.moveForward) {
-                velocity.z -= 400.0 * delta;
+                velocity.z -= 1000.0 * delta;
             }
             if (keyboardControls.moveLeft) {
                 velocity.x -= 400.0 * delta;
             }
             if (keyboardControls.moveBackward) {
-                velocity.z += 400.0 * delta;
+                velocity.z += 1000.0 * delta;
             }
             if (keyboardControls.moveRight) {
                 velocity.x += 400.0 * delta;
@@ -591,8 +986,8 @@ var game = (function () {
     }
     // Camera Look function
     function cameraLook() {
-        var zenith = THREE.Math.degToRad(90);
-        var nadir = THREE.Math.degToRad(-90);
+        var zenith = THREE.Math.degToRad(-10);
+        var nadir = THREE.Math.degToRad(-10);
         var cameraPitch = camera.rotation.x + mouseControls.pitch;
         // Constrain the Camera Pitch
         camera.rotation.x = THREE.Math.clamp(cameraPitch, nadir, zenith);
@@ -608,12 +1003,12 @@ var game = (function () {
     }
     // Setup main camera for the scene
     function setupCamera() {
-        camera = new PerspectiveCamera(35, config.Screen.RATIO, 0.1, 150);
-        // camera.position.set(0, 50, 80);
-        // camera.lookAt(new Vector3(0, 0, 0));
+        camera = new PerspectiveCamera(35, config.Screen.RATIO, 0.1, 100);
+        //camera.position.set(0, 10, 30);
+        //camera.lookAt(new Vector3(0, 0, 0));
         console.log("Finished setting up Camera...");
     }
-    window.onload = init;
+    window.onload = preload;
     return {
         scene: scene
     };
