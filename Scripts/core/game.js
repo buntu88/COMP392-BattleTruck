@@ -848,6 +848,7 @@ var game = (function () {
                 scene.remove(group2);
                 scene.remove(player);
                 scoreValue += 1000;
+                livesLabel.text = "You Win!!!";
                 scoreLabel.text = "SCORE: " + scoreValue;
             }
         });
