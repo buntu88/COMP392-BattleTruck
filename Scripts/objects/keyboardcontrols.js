@@ -1,6 +1,10 @@
 var objects;
 (function (objects) {
     // KeyboardControls Class +++++++++++++++
+    //Author’s name:        Vishal Guleria (300813391) & Vinay Bhardwaj (300825097)
+    //Date last Modified    March 24,2016
+    //Program description   Assignment 3 - Battle Truck : Saving abandoned soldiers.
+    //Revision History      v3
     var KeyboardControls = (function () {
         // CONSTRUCTOR ++++++++++++++++++++++++++    
         function KeyboardControls() {

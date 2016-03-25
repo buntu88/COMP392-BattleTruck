@@ -137,15 +137,15 @@ var game = (() => {
     var group = new THREE.Object3D();
     var group1 = new THREE.Object3D();
     var group2 = new THREE.Object3D();
-    var cube: Mesh;
-    var cube1: Mesh;
-    var cube2: Mesh;
-    var cube3: Mesh;
-    var cube4: Mesh;
-    var cube5: Mesh;
-    var cube6: Mesh;
-    var cube7: Mesh;
-    var cube8: Mesh;
+    var cube: Physijs.Mesh;
+    var cube1: Physijs.Mesh;
+    var cube2: Physijs.Mesh;
+    var cube3: Physijs.Mesh;
+    var cube4: Physijs.Mesh;
+    var cube5: Physijs.Mesh;
+    var cube6: Physijs.Mesh;
+    var cube7: Physijs.Mesh;
+    var cube8: Physijs.Mesh;
     var cubeGeometry: CubeGeometry;
     var cubeGeometry1: CubeGeometry;
     var cubeGeometry2: CubeGeometry;
@@ -155,19 +155,25 @@ var game = (() => {
     var cubeGeometry6: CubeGeometry;
     var cubeGeometry7: CubeGeometry;
     var cubeGeometry8: CubeGeometry;
-    var cubeMaterialSkin: LambertMaterial;
-    var cubeMaterialBody: LambertMaterial;
-    var cubeMaterialLegs: LambertMaterial;
-    var cubeMaterialFeet: LambertMaterial;
+    var cubeMaterialSkin: Physijs.Material;
+    var cubeMaterialBody: Physijs.Material;
+    var cubeMaterialLegs: Physijs.Material;
+    var cubeMaterialFeet: Physijs.Material;
     var coinGeometry: Geometry;
     var coinMaterial: Physijs.Material;
 
     var coins: Physijs.ConcaveMesh[];
-    var cointCount: number = 10;
+    var cointCount: number = 5;
 
     var deathPlaneGeometry: CubeGeometry;
     var deathPlaneMaterial: Physijs.Material;
     var deathPlane: Physijs.Mesh;
+    var box: Physijs.Mesh;
+    var boxGeometry: CubeGeometry;
+    var boxMat: Physijs.Material;
+    var boxMatPh: PhongMaterial;
+    var boxTexture: Texture;
+    var boxTextureNormal: Texture;
 
     // CreateJS Related Variables
     var assets: createjs.LoadQueue;
@@ -180,11 +186,12 @@ var game = (() => {
 
 
     var manifest = [
-        { id: "land", src: "../../Assets/audio/Land.wav" },
-        { id: "deathPlane", src: "../../Assets/audio/hit.wav" },
+        { id: "land", src: "../../Assets/audio/turck_start.mp3" },
+        { id: "deathPlane", src: "../../Assets/audio/Mine.mp3" },
         { id: "coin", src: "../../Assets/audio/coin.mp3" },
-        { id: "barrier", src: "../../Assets/audio/coin.mp3" },
-        { id: "boundary", src: "../../Assets/audio/Jump.wav" }
+        { id: "barrier", src: "../../Assets/audio/collapse.mp3" },
+        { id: "boundary", src: "../../Assets/audio/crash.mp3" },
+        { id: "soldiers", src: "../../Assets/audio/soldiers.m4a" }
     ];
 
     function preload(): void {
@@ -363,7 +370,7 @@ var game = (() => {
         groundTexture.wrapT = THREE.RepeatWrapping;
         groundTexture.repeat.set(8, 8);
 
-        groundTextureNormal = new THREE.TextureLoader().load('../../Assets/images/GravelCobbleNormal.jpg');
+        groundTextureNormal = new THREE.TextureLoader().load('../../Assets/images/GravelCobbleNormal.png');
         groundTextureNormal.wrapS = THREE.RepeatWrapping;
         groundTextureNormal.wrapT = THREE.RepeatWrapping;
         groundTextureNormal.repeat.set(8, 8);
@@ -624,57 +631,17 @@ var game = (() => {
         player1.add(playerf);
         console.log("Added Player1 to Scene");
         scene.add(player);
-        //======================================================================================================
 
 
-        // Add custom coin imported from Blender
-        addCoinMesh();
 
-        addDeathPlane();
-
-        // Collision Check
-        player.addEventListener('collision', (eventObject) => {
-            if (eventObject.name === "Ground") {
-                isGrounded = true;
-                createjs.Sound.play("land");
-            }
-            if (eventObject.name === "Coin") {
-                createjs.Sound.play("coin");
-                scene.remove(eventObject);
-                setCoinPosition(eventObject);
-                scoreValue += 100;
-                scoreLabel.text = "SCORE: " + scoreValue;
-            }
-
-            if (eventObject.name === "DeathPlane") {
-                createjs.Sound.play("deathPlane");
-                livesValue--;
-                livesLabel.text = "LIVES: " + livesValue;
-                scene.remove(player);
-                player.position.set(-19, 10, 15);
-                scene.add(player);
-            }
-            if (eventObject.name === "Boundary") {
-                createjs.Sound.play("boundary");
-                scoreValue -= 20;
-                scoreLabel.text = "SCORE: " + scoreValue;
-            }
-            if (eventObject.name === "Barrier") {
-                createjs.Sound.play("barrier");
-                scene.remove(eventObject);
-                scoreValue += 500;
-                scoreLabel.text = "SCORE: " + scoreValue;
-            }
-        });
-
-        cubeMaterialSkin = new LambertMaterial({ color: 0x90EE90 });
-        cubeMaterialBody = new LambertMaterial({ color: 0x9ACD32 });
-        cubeMaterialLegs = new LambertMaterial({ color: 0x000000 });
-        cubeMaterialFeet = new LambertMaterial({ color: 0x614126 });
+        cubeMaterialSkin = Physijs.createMaterial(new THREE.MeshBasicMaterial({ color: 0x90EE90 }), 0.4, 0);
+        cubeMaterialBody = Physijs.createMaterial(new THREE.MeshBasicMaterial({ color: 0x9ACD32 }), 0.4, 0);
+        cubeMaterialLegs = Physijs.createMaterial(new THREE.MeshBasicMaterial({ color: 0x000000 }), 0.4, 0);
+        cubeMaterialFeet = Physijs.createMaterial(new THREE.MeshBasicMaterial({ color: 0x614126 }), 0.4, 0);
 
         //Adding Head
         cubeGeometry = new CubeGeometry(2.036, 2.315, 2);
-        cube = new Mesh(cubeGeometry, cubeMaterialSkin);
+        cube = new Physijs.ConvexMesh(cubeGeometry, cubeMaterialSkin);
         cube.castShadow = true;
         cube.receiveShadow = true;
         cube.position.x = 0.125;
@@ -684,7 +651,7 @@ var game = (() => {
 
         //Adding Neck
         cubeGeometry1 = new CubeGeometry(1, 1, 1);
-        cube1 = new Mesh(cubeGeometry1, cubeMaterialSkin);
+        cube1 = new Physijs.ConvexMesh(cubeGeometry1, cubeMaterialSkin);
         cube1.castShadow = true;
         cube1.receiveShadow = true;
         cube1.position.x = -0.02;
@@ -695,7 +662,7 @@ var game = (() => {
 
         //Adding Body
         cubeGeometry2 = new CubeGeometry(1.7, 5, 4);
-        cube2 = new Mesh(cubeGeometry2, cubeMaterialBody);
+        cube2 = new Physijs.ConvexMesh(cubeGeometry2, cubeMaterialBody);
         cube2.castShadow = true;
         cube2.receiveShadow = true;
         cube2.position.x = 0.06;
@@ -706,7 +673,7 @@ var game = (() => {
 
         //Adding right arm
         cubeGeometry3 = new CubeGeometry(1.2, 0.8, 3.5);
-        cube3 = new Mesh(cubeGeometry3, cubeMaterialSkin);
+        cube3 = new Physijs.ConvexMesh(cubeGeometry3, cubeMaterialSkin);
         cube3.castShadow = true;
         cube3.receiveShadow = true;
         cube3.position.x = -0.21;
@@ -716,7 +683,7 @@ var game = (() => {
 
         //Adding left arm
         cubeGeometry4 = new CubeGeometry(1.2, 0.8, 3.5);
-        cube4 = new Mesh(cubeGeometry4, cubeMaterialSkin);
+        cube4 = new Physijs.ConvexMesh(cubeGeometry4, cubeMaterialSkin);
         cube4.castShadow = true;
         cube4.receiveShadow = true;
         cube4.position.x = -0.21;
@@ -726,7 +693,7 @@ var game = (() => {
 
         //Adding right leg
         cubeGeometry5 = new CubeGeometry(1, 3, 1);
-        cube5 = new Mesh(cubeGeometry5, cubeMaterialLegs);
+        cube5 = new Physijs.ConvexMesh(cubeGeometry5, cubeMaterialLegs);
         cube5.castShadow = true;
         cube5.receiveShadow = true;
         cube5.position.x = -0.16;
@@ -736,7 +703,7 @@ var game = (() => {
 
         //Adding left leg
         cubeGeometry6 = new CubeGeometry(1, 3, 1);
-        cube6 = new Mesh(cubeGeometry6, cubeMaterialLegs);
+        cube6 = new Physijs.ConvexMesh(cubeGeometry6, cubeMaterialLegs);
         cube6.castShadow = true;
         cube6.receiveShadow = true;
         cube6.position.x = -0.16;
@@ -746,7 +713,7 @@ var game = (() => {
 
         //Adding right feet
         cubeGeometry7 = new CubeGeometry(1.6, 0.5, 1);
-        cube7 = new Mesh(cubeGeometry7, cubeMaterialFeet);
+        cube7 = new Physijs.ConvexMesh(cubeGeometry7, cubeMaterialFeet);
         cube7.castShadow = true;
         cube7.receiveShadow = true;
         cube7.position.x = 0.15;
@@ -756,7 +723,7 @@ var game = (() => {
 
         //Adding left feet
         cubeGeometry8 = new CubeGeometry(1.6, 0.5, 1);
-        cube8 = new Mesh(cubeGeometry8, cubeMaterialFeet);
+        cube8 = new Physijs.ConvexMesh(cubeGeometry8, cubeMaterialFeet);
         cube8.castShadow = true;
         cube8.receiveShadow = true;
         cube8.position.x = 0.15;
@@ -765,12 +732,13 @@ var game = (() => {
         group.add(cube8); //Adding Cube to the group
         group.position.set(20, 5, -20);
         group.rotation.y = -1.567;
+        group.name = "Soldiers";
 
         scene.add(group);
 
 
         cubeGeometry = new CubeGeometry(2.036, 2.315, 2);
-        cube = new Mesh(cubeGeometry, cubeMaterialSkin);
+        cube = new Physijs.ConvexMesh(cubeGeometry, cubeMaterialSkin);
         cube.castShadow = true;
         cube.receiveShadow = true;
         cube.position.x = 0.125;
@@ -780,7 +748,7 @@ var game = (() => {
 
         //Adding Neck
         cubeGeometry1 = new CubeGeometry(1, 1, 1);
-        cube1 = new Mesh(cubeGeometry1, cubeMaterialSkin);
+        cube1 = new Physijs.ConvexMesh(cubeGeometry1, cubeMaterialSkin);
         cube1.castShadow = true;
         cube1.receiveShadow = true;
         cube1.position.x = -0.02;
@@ -791,7 +759,7 @@ var game = (() => {
 
         //Adding Body
         cubeGeometry2 = new CubeGeometry(1.7, 5, 4);
-        cube2 = new Mesh(cubeGeometry2, cubeMaterialBody);
+        cube2 = new Physijs.ConvexMesh(cubeGeometry2, cubeMaterialBody);
         cube2.castShadow = true;
         cube2.receiveShadow = true;
         cube2.position.x = 0.06;
@@ -802,7 +770,7 @@ var game = (() => {
 
         //Adding right arm
         cubeGeometry3 = new CubeGeometry(1.2, 0.8, 3.5);
-        cube3 = new Mesh(cubeGeometry3, cubeMaterialSkin);
+        cube3 = new Physijs.ConvexMesh(cubeGeometry3, cubeMaterialSkin);
         cube3.castShadow = true;
         cube3.receiveShadow = true;
         cube3.position.x = -0.21;
@@ -812,7 +780,7 @@ var game = (() => {
 
         //Adding left arm
         cubeGeometry4 = new CubeGeometry(1.2, 0.8, 3.5);
-        cube4 = new Mesh(cubeGeometry4, cubeMaterialSkin);
+        cube4 = new Physijs.ConvexMesh(cubeGeometry4, cubeMaterialSkin);
         cube4.castShadow = true;
         cube4.receiveShadow = true;
         cube4.position.x = -0.21;
@@ -822,7 +790,7 @@ var game = (() => {
 
         //Adding right leg
         cubeGeometry5 = new CubeGeometry(1, 3, 1);
-        cube5 = new Mesh(cubeGeometry5, cubeMaterialLegs);
+        cube5 = new Physijs.ConvexMesh(cubeGeometry5, cubeMaterialLegs);
         cube5.castShadow = true;
         cube5.receiveShadow = true;
         cube5.position.x = -0.16;
@@ -832,7 +800,7 @@ var game = (() => {
 
         //Adding left leg
         cubeGeometry6 = new CubeGeometry(1, 3, 1);
-        cube6 = new Mesh(cubeGeometry6, cubeMaterialLegs);
+        cube6 = new Physijs.ConvexMesh(cubeGeometry6, cubeMaterialLegs);
         cube6.castShadow = true;
         cube6.receiveShadow = true;
         cube6.position.x = -0.16;
@@ -842,7 +810,7 @@ var game = (() => {
 
         //Adding right feet
         cubeGeometry7 = new CubeGeometry(1.6, 0.5, 1);
-        cube7 = new Mesh(cubeGeometry7, cubeMaterialFeet);
+        cube7 = new Physijs.ConvexMesh(cubeGeometry7, cubeMaterialFeet);
         cube7.castShadow = true;
         cube7.receiveShadow = true;
         cube7.position.x = 0.15;
@@ -852,7 +820,7 @@ var game = (() => {
 
         //Adding left feet
         cubeGeometry8 = new CubeGeometry(1.6, 0.5, 1);
-        cube8 = new Mesh(cubeGeometry8, cubeMaterialFeet);
+        cube8 = new Physijs.ConvexMesh(cubeGeometry8, cubeMaterialFeet);
         cube8.castShadow = true;
         cube8.receiveShadow = true;
         cube8.position.x = 0.15;
@@ -860,13 +828,13 @@ var game = (() => {
         cube8.position.z = 1.0;
         group1.add(cube8); //Adding Cube to the group
         group1.position.set(15, 5, -10);
-
+        group1.name = "Soldiers";
         scene.add(group1);
 
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         cubeGeometry = new CubeGeometry(2.036, 2.315, 2);
-        cube = new Mesh(cubeGeometry, cubeMaterialSkin);
+        cube = new Physijs.ConvexMesh(cubeGeometry, cubeMaterialSkin);
         cube.castShadow = true;
         cube.receiveShadow = true;
         cube.position.x = 0.125;
@@ -876,7 +844,7 @@ var game = (() => {
 
         //Adding Neck
         cubeGeometry1 = new CubeGeometry(1, 1, 1);
-        cube1 = new Mesh(cubeGeometry1, cubeMaterialSkin);
+        cube1 = new Physijs.ConvexMesh(cubeGeometry1, cubeMaterialSkin);
         cube1.castShadow = true;
         cube1.receiveShadow = true;
         cube1.position.x = -0.02;
@@ -887,7 +855,7 @@ var game = (() => {
 
         //Adding Body
         cubeGeometry2 = new CubeGeometry(1.7, 5, 4);
-        cube2 = new Mesh(cubeGeometry2, cubeMaterialBody);
+        cube2 = new Physijs.ConvexMesh(cubeGeometry2, cubeMaterialBody);
         cube2.castShadow = true;
         cube2.receiveShadow = true;
         cube2.position.x = 0.06;
@@ -898,7 +866,7 @@ var game = (() => {
 
         //Adding right arm
         cubeGeometry3 = new CubeGeometry(1.2, 0.8, 3.5);
-        cube3 = new Mesh(cubeGeometry3, cubeMaterialSkin);
+        cube3 = new Physijs.ConvexMesh(cubeGeometry3, cubeMaterialSkin);
         cube3.castShadow = true;
         cube3.receiveShadow = true;
         cube3.position.x = -0.21;
@@ -908,7 +876,7 @@ var game = (() => {
 
         //Adding left arm
         cubeGeometry4 = new CubeGeometry(1.2, 0.8, 3.5);
-        cube4 = new Mesh(cubeGeometry4, cubeMaterialSkin);
+        cube4 = new Physijs.ConvexMesh(cubeGeometry4, cubeMaterialSkin);
         cube4.castShadow = true;
         cube4.receiveShadow = true;
         cube4.position.x = -0.21;
@@ -918,7 +886,7 @@ var game = (() => {
 
         //Adding right leg
         cubeGeometry5 = new CubeGeometry(1, 3, 1);
-        cube5 = new Mesh(cubeGeometry5, cubeMaterialLegs);
+        cube5 = new Physijs.ConvexMesh(cubeGeometry5, cubeMaterialLegs);
         cube5.castShadow = true;
         cube5.receiveShadow = true;
         cube5.position.x = -0.16;
@@ -928,7 +896,7 @@ var game = (() => {
 
         //Adding left leg
         cubeGeometry6 = new CubeGeometry(1, 3, 1);
-        cube6 = new Mesh(cubeGeometry6, cubeMaterialLegs);
+        cube6 = new Physijs.ConvexMesh(cubeGeometry6, cubeMaterialLegs);
         cube6.castShadow = true;
         cube6.receiveShadow = true;
         cube6.position.x = -0.16;
@@ -938,7 +906,7 @@ var game = (() => {
 
         //Adding right feet
         cubeGeometry7 = new CubeGeometry(1.6, 0.5, 1);
-        cube7 = new Mesh(cubeGeometry7, cubeMaterialFeet);
+        cube7 = new Physijs.ConvexMesh(cubeGeometry7, cubeMaterialFeet);
         cube7.castShadow = true;
         cube7.receiveShadow = true;
         cube7.position.x = 0.15;
@@ -948,7 +916,7 @@ var game = (() => {
 
         //Adding left feet
         cubeGeometry8 = new CubeGeometry(1.6, 0.5, 1);
-        cube8 = new Mesh(cubeGeometry8, cubeMaterialFeet);
+        cube8 = new Physijs.ConvexMesh(cubeGeometry8, cubeMaterialFeet);
         cube8.castShadow = true;
         cube8.receiveShadow = true;
         cube8.position.x = 0.15;
@@ -957,7 +925,76 @@ var game = (() => {
         group2.add(cube8); //Adding Cube to the group
         group2.position.set(25, 5, -10);
         group2.rotation.y = 3.14159;
+        group2.name = "Soldiers";
         scene.add(group2);
+
+        //======================================================================================================
+
+
+        // Add custom coin imported from Blender
+        addCoinMesh();
+
+        //addDeathPlane();
+
+        // Collision Check
+        player.addEventListener('collision', (eventObject) => {
+            if (eventObject.name === "Ground") {
+                isGrounded = true;
+                createjs.Sound.play("land");
+            }
+            if (eventObject.name === "Coin") {
+                createjs.Sound.play("coin");
+                scene.remove(eventObject);
+                scoreValue += 100;
+                scoreLabel.text = "SCORE: " + scoreValue;
+            }
+
+            if (eventObject.name === "DeathPlane") {
+                createjs.Sound.play("deathPlane");
+                livesValue--;
+                
+                if (livesValue > 0) {
+                    livesLabel.text = "LIVES: " + livesValue;
+                    scene.remove(player);
+                    player.position.set(-19, 10, 15);
+                    scene.add(player);
+                }
+                else{
+                    livesLabel.text = "Game Over!!!";
+                    scoreLabel.text = "Thanks for Playing";
+                     scene.remove(player);
+                }
+
+            }
+            if (eventObject.name === "Boundary") {
+                createjs.Sound.play("boundary");
+                livesValue--;
+                if (livesValue > 0) {
+                    livesLabel.text = "LIVES: " + livesValue;
+                }
+                else{
+                    livesLabel.text = "Game Over!!!";
+                    scoreLabel.text = "Thanks for Playing";
+                     scene.remove(player);
+                }
+            }
+            if (eventObject.name === "Barrier") {
+                createjs.Sound.play("barrier");
+                scene.remove(eventObject);
+                scoreValue += 500;
+                scoreLabel.text = "SCORE: " + scoreValue;
+            }
+
+            if (eventObject.name === "Soldiers") {
+                console.log(eventObject);
+                createjs.Sound.play("soldiers");
+                scene.remove(eventObject);
+                scoreValue += 500;
+                scoreLabel.text = "SCORE: " + scoreValue;
+            }
+
+        });
+
 
 
 
@@ -979,7 +1016,7 @@ var game = (() => {
 
         // create parent-child relationship with camera and player
         playerb.add(camera);
-        camera.position.set(0, 5, 12);
+        camera.position.set(0, 7, 20);
 
         // Add framerate stats
         addStatsObject();
@@ -1009,44 +1046,49 @@ var game = (() => {
         return offset;
     }
 
-    function addDeathPlane(): void {
-        deathPlaneGeometry = new BoxGeometry(100, 1, 100);
-        deathPlaneMaterial = Physijs.createMaterial(new MeshBasicMaterial({ color: 0xff0000 }), 0.4, 0.6);
 
-        deathPlane = new Physijs.BoxMesh(deathPlaneGeometry, deathPlaneMaterial, 0);
-        deathPlane.position.set(0, -10, 0);
-        deathPlane.name = "DeathPlane";
-        scene.add(deathPlane);
-    }
 
     // Add the Coin to the scene
     function addCoinMesh(): void {
 
-        coins = new Array<Physijs.ConvexMesh>(); // Instantiate a convex mesh array
+        coins = new Array<Physijs.Mesh>(); // Instantiate a convex mesh array
 
-        var coinLoader = new THREE.JSONLoader().load("../../Assets/imported/coin.json", function(geometry: THREE.Geometry) {
-            var phongMaterial = new PhongMaterial({ color: 0xE7AB32 });
-            phongMaterial.emissive = new THREE.Color(0xE7AB32);
 
-            var coinMaterial = Physijs.createMaterial((phongMaterial), 0.4, 0.6);
+        boxTexture = new THREE.TextureLoader().load('../../Assets/images/box.jpg');
+        boxTexture.wrapS = THREE.RepeatWrapping;
+        boxTexture.wrapT = THREE.RepeatWrapping;
+        boxTexture.repeat.set(1, 1);
 
-            for (var count: number = 0; count < cointCount; count++) {
-                coins[count] = new Physijs.ConvexMesh(geometry, coinMaterial);
-                coins[count].receiveShadow = true;
-                coins[count].castShadow = true;
-                coins[count].name = "Coin";
-                setCoinPosition(coins[count]);
-            }
-        });
+        boxTextureNormal = new THREE.TextureLoader().load('../../Assets/images/box.jpg');
+        boxTextureNormal.wrapS = THREE.RepeatWrapping;
+        boxTextureNormal.wrapT = THREE.RepeatWrapping;
+        boxTextureNormal.repeat.set(1, 1);
+
+        boxMatPh = new PhongMaterial();
+        boxMatPh.map = boxTexture;
+        boxMatPh.bumpMap = boxTextureNormal;
+        boxMatPh.bumpScale = 0.2;
+        boxMat = Physijs.createMaterial(boxMatPh, 0, 0);
+
+        boxGeometry = new BoxGeometry(4, 4, 4);
+
+
+        for (var count: number = 0; count < cointCount; count++) {
+            coins[count] = new Physijs.ConvexMesh(boxGeometry, boxMat, 0);
+            coins[count].receiveShadow = true;
+            coins[count].castShadow = true;
+            coins[count].name = "Coin";
+            setCoinPosition(coins[count]);
+        }
 
         console.log("Added Coin Mesh to Scene");
     }
 
     // Set Coin Position
     function setCoinPosition(coin: Physijs.ConvexMesh): void {
-        var randomPointX: number = Math.floor(Math.random() * 20) - 10;
-        var randomPointZ: number = Math.floor(Math.random() * 20) - 10;
-        coin.position.set(randomPointX, 10, randomPointZ);
+        var randomPointX: number = Math.floor(Math.random() * 30);
+        var randomPointZ: number = Math.floor(Math.random() * 30);
+        coin.position.set(randomPointX, 2, randomPointZ);
         scene.add(coin);
     }
 
@@ -1102,12 +1144,6 @@ var game = (() => {
     // Setup main game loop
     function gameLoop(): void {
         stats.update();
-
-        coins.forEach(coin => {
-            coin.setAngularFactor(new Vector3(0, 0, 0));
-            coin.setAngularVelocity(new Vector3(0, 1, 0));
-        });
-
         checkControls();
         stage.update();
 
@@ -1177,8 +1213,8 @@ var game = (() => {
 
     // Camera Look function
     function cameraLook(): void {
-        var zenith: number = THREE.Math.degToRad(-10);
-        var nadir: number = THREE.Math.degToRad(-10);
+        var zenith: number = THREE.Math.degToRad(-20);
+        var nadir: number = THREE.Math.degToRad(-20);
 
         var cameraPitch: number = camera.rotation.x + mouseControls.pitch;
 
