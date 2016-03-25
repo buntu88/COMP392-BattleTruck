@@ -190,8 +190,9 @@ var game = (() => {
         { id: "deathPlane", src: "../../Assets/audio/Mine.mp3" },
         { id: "coin", src: "../../Assets/audio/coin.mp3" },
         { id: "barrier", src: "../../Assets/audio/collapse.mp3" },
-        { id: "boundary", src: "../../Assets/audio/crash.mp3" }
-        //{ id: "soldiers", src: "../../Assets/audio/soldiers.m4a" }
+        { id: "boundary", src: "../../Assets/audio/crash.mp3" },
+        { id: "soldiers", src: "../../Assets/audio/soldiers.mp3" },
+       
     ];
 
     function preload(): void {
@@ -511,7 +512,7 @@ var game = (() => {
         cubeInnerWall3 = new Physijs.ConvexMesh(cubeGeometryIW3, destructiveMaterial, 0);
         cubeInnerWall3.castShadow = true;
         cubeInnerWall3.receiveShadow = true;
-        cubeInnerWall3.name = "Barrier";
+        cubeInnerWall3.name = "Soldiers";
         cubeInnerWall3.position.x = 20;
         cubeInnerWall3.position.y = 0;
         cubeInnerWall3.position.z = 3.75;
@@ -961,7 +962,7 @@ var game = (() => {
                 }
                 else{
                     livesLabel.text = "Game Over!!!";
-                    scoreLabel.text = "Thanks for Playing";
+                    scoreLabel.text = "SCORE: " + scoreValue;
                      scene.remove(player);
                 }
 
@@ -974,7 +975,7 @@ var game = (() => {
                 }
                 else{
                     livesLabel.text = "Game Over!!!";
-                    scoreLabel.text = "Thanks for Playing";
+                    scoreLabel.text = "SCORE: " + scoreValue;
                      scene.remove(player);
                 }
             }
@@ -987,9 +988,14 @@ var game = (() => {
 
             if (eventObject.name === "Soldiers") {
                 console.log(eventObject);
+                createjs.Sound.play("barrier");
                 createjs.Sound.play("soldiers");
                 scene.remove(eventObject);
-                scoreValue += 500;
+                scene.remove(group);
+                scene.remove(group1);
+                scene.remove(group2);
+                scene.remove(player);
+                scoreValue += 1000;
                 scoreLabel.text = "SCORE: " + scoreValue;
             }
 
@@ -1236,8 +1242,6 @@ var game = (() => {
     // Setup main camera for the scene
     function setupCamera(): void {
         camera = new PerspectiveCamera(35, config.Screen.RATIO, 0.1, 100);
-        //camera.position.set(0, 10, 30);
-        //camera.lookAt(new Vector3(0, 0, 0));
         console.log("Finished setting up Camera...");
     }
 
