@@ -190,8 +190,8 @@ var game = (() => {
         { id: "deathPlane", src: "../../Assets/audio/Mine.mp3" },
         { id: "coin", src: "../../Assets/audio/coin.mp3" },
         { id: "barrier", src: "../../Assets/audio/collapse.mp3" },
-        { id: "boundary", src: "../../Assets/audio/crash.mp3" },
-        { id: "soldiers", src: "../../Assets/audio/soldiers.m4a" }
+        { id: "boundary", src: "../../Assets/audio/crash.mp3" }
+        //{ id: "soldiers", src: "../../Assets/audio/soldiers.m4a" }
     ];
 
     function preload(): void {
